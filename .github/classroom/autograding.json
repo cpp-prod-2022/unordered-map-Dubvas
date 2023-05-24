@@ -1,0 +1,14 @@
+{
+  "tests": [
+    {
+      "name": "compile and run",
+      "setup": "",
+      "run": "./test.sh",
+      "input": "",
+      "output": "",
+      "comparison": "included",
+      "timeout": 2,
+      "points": null
+    }
+  ]
+}
