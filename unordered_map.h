@@ -8,7 +8,6 @@
 #include <cmath>
 #include <unordered_map>
 
-
 template<typename Key, typename Value, class Hash = std::hash<Key>, class Equal = std::equal_to<Key>, class Alloc = std::allocator<std::pair<const Key, Value>>>
 class UnorderedMap {
 public:
@@ -119,10 +118,10 @@ private:
 
 			bool operator==(const BaseIterator& that) const = default;
 
-			reference operator*() {
+			reference operator*() const {
 				return static_cast<reference>(static_cast<Node*>(ptr)->value);
 			}
-			pointer operator->() {
+			pointer operator->() const {
 				return &static_cast<Node*>(ptr)->value;
 			}
 		};
@@ -135,7 +134,7 @@ private:
 	private:
 		using NodeAllocType = typename std::allocator_traits<Allocator>::template rebind_alloc<Node>;
 		using AllocTraits = std::allocator_traits<NodeAllocType>;
-		NodeAllocType node_alloc; // [[no_unique_address]]
+		[[no_unique_address]] NodeAllocType node_alloc;
 		BaseNode root;
 		size_t sz = 0;
 
@@ -352,13 +351,13 @@ private:
 		BaseIterator(LIterator it) : it(it) {}
 	public:
 		BaseIterator() {}
-		BaseIterator(const BaseIterator& that) = default;
+		BaseIterator(const BaseIterator& that) noexcept = default;
 
-		operator BaseIterator<const T>() const {
+		operator BaseIterator<const T>() const noexcept {
 			return BaseIterator<const T>(it);
 		}
 
-		BaseIterator& operator=(const BaseIterator& that) = default;
+		BaseIterator& operator=(const BaseIterator& that) noexcept = default;
 		BaseIterator& operator++() {
 			++it;
 			return *this;
@@ -379,11 +378,12 @@ private:
 		}
 
 		bool operator==(const BaseIterator& that) const = default;
+		bool operator!=(const BaseIterator& that) const = default;
 
-		reference operator*() {
+		reference operator*() const {
 			return static_cast<reference>(it->value);
 		}
-		pointer operator->() {
+		pointer operator->() const {
 			return &it->value;
 		}
 	};
@@ -401,9 +401,10 @@ private:
 		if (!start_o)
 			return std::pair<LIterator, bool>{ end().it, false };
 		auto start = *start_o;
-		while (start != bucket.end() && start->hash == h) {
+		while (start != bucket.end() && start->hash % table.size() == h % table.size()) {
 			if (equer(start->value.first, k))
 				return std::pair<LIterator, bool>{ start, true };
+			++start;
 		}
 		return std::pair<LIterator, bool>{ start, false };
 	}
@@ -414,7 +415,7 @@ private:
 		if (!table[h % table.size()])
 			table[h % table.size()] = it;
 		if (load_factor() > max_load_factor())
-			rehash(2 * table.size() + 1);
+			rehash(static_cast<size_t>(static_cast<float>(2 * table.size() + 1) / max_load_factor()) + 1);
 		return it;
 	}
 
@@ -451,7 +452,8 @@ public:
 			LIterator put = new_bucket.end();
 			if (table[curr_node->value.hash % table.size()])
 				put = *table[curr_node->value.hash % table.size()];
-			new_bucket.insertNode(put, curr_node);
+			put = new_bucket.insertNode(put, curr_node);
+			table[curr_node->value.hash % table.size()] = put;
 			curr = next;
 		}
 		new_bucket.root.swap(bucket.root);
@@ -544,22 +546,17 @@ public:
 	}
 
 	std::pair<iterator, bool> insert(const NodeType& value) {
-		auto [it, res] = myFind(value.first);
-		if (res)
-			return { iterator(it), false };
 		auto* tmp = correctConstruct(value);
-		LIterator result;
+		std::pair<iterator, bool> result;
 		try {
-			result = inPlaceInsert(it, std::move(*tmp));
+			result = insert(std::move(*tmp));
 		}
 		catch (...) {
-			AllocTraits::destroy(allocator, tmp);
 			AllocTraits::deallocate(allocator, tmp, 1);
 			throw;
 		}
-		AllocTraits::destroy(allocator, tmp);
 		AllocTraits::deallocate(allocator, tmp, 1);
-		return { iterator(result), true };
+		return result;
 	}
 
 	std::pair<iterator, bool> insert(NodeType&& value) {
