@@ -6,6 +6,8 @@
 #include <optional>
 #include <vector>
 #include <cmath>
+#include <unordered_map>
+
 
 template<typename Key, typename Value, class Hash = std::hash<Key>, class Equal = std::equal_to<Key>, class Alloc = std::allocator<std::pair<const Key, Value>>>
 class UnorderedMap {
@@ -545,10 +547,10 @@ public:
     }
 
     Value& operator[](Key&& k_rv) {
-        Key k = std::move(k_rv);
+        Key key = std::move(k_rv);
         auto [it, res] = myFind(k);
         if (!res)
-            it = inPlaceInsert(it, NodeType{ std::move(k), Value() });
+            it = inPlaceInsert(it, NodeType{ std::move(key), Value() });
         return it->value.second;
     }
 
