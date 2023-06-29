@@ -419,8 +419,8 @@ private:
     LIterator inPlaceInsert(LIterator it, NodeType&& ins) {
         size_t hash = hasher(ins.first);
         it = bucket.insert(it, ListElement(std::move(ins), hash));
-        if (!table[h % table.size()])
-            table[h % table.size()] = it;
+        if (!table[hash % table.size()])
+            table[hash % table.size()] = it;
         if (load_factor() > max_load_factor())
             rehash(static_cast<size_t>(static_cast<float>(2 * table.size() + 1) / max_load_factor()) + 1);
         return it;
