@@ -8,6 +8,9 @@
 #include <cmath>
 #include <unordered_map>
 
+template<typename Key, typename Value, class Hash = std::hash<Key>, class Equal = std::equal_to<Key>, class Alloc = std::allocator<std::pair<const Key, Value>>>
+class UnorderedMap;
+
 template<typename T, class Allocator = std::allocator<T>>
 class List {
 private:
@@ -324,18 +327,16 @@ class UnorderedMap {
 public:
 	using NodeType = std::pair<const Key, Value>;
 private:
-
-	
-
 	struct ListElement {
 		NodeType value;
 		size_t hash;
 		ListElement(NodeType&& value, size_t h) : value(NodeType{ std::move(const_cast<Key&>(value.first)), std::move(value.second) }), hash(h) {};
 		ListElement(ListElement&& that) : value(NodeType{ std::move(const_cast<Key&>(that.value.first)), std::move(that.value.second) }), hash(std::move(that.hash)) {};
 		ListElement(const ListElement& that) = default;
-		ListElement(ListElement&& that) {
+		ListElement& operator=(ListElement&& that) {
 			value = NodeType{ std::move(const_cast<Key&>(that.value.first)), std::move(that.value.second) };
 			hash = std::move(that.hash);
+			return *this;
 		}
 		~ListElement() = default;
 	};
