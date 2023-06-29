@@ -6,6 +6,8 @@
 #include <optional>
 #include <vector>
 #include <cmath>
+#include <unordered_map>
+
 
 template<typename Key, typename Value, class Hash = std::hash<Key>, class Equal = std::equal_to<Key>, class Alloc = std::allocator<std::pair<const Key, Value>>>
 class UnorderedMap {
@@ -85,6 +87,7 @@ class UnorderedMap {
 		public:
 			BaseIterator() {}
 			BaseIterator(const BaseIterator& that) = default;
+			~BaseIterator() = default;
 
 			operator BaseIterator<const T>() const {
 				return BaseIterator<const T>(ptr);
@@ -333,10 +336,11 @@ private:
 			hash = std::move(that.hash);
 			return *this;
 		}
+		ListElement& operator=(const ListElement& that) = default;
 		~ListElement() = default;
 	};
 
-	static constexpr size_t kBaseBuckets = 4;
+	static constexpr size_t base_buckets = 4;
 	using AllocTraits = std::allocator_traits<Alloc>;
 	using ListType = List<ListElement, Alloc>;
 	using LIterator = typename ListType::iterator;
@@ -356,6 +360,7 @@ private:
 	public:
 		BaseIterator() {}
 		BaseIterator(const BaseIterator& that) noexcept = default;
+		~BaseIterator() = default;
 
 		operator BaseIterator<const T>() const noexcept {
 			return BaseIterator<const T>(it);
@@ -468,15 +473,15 @@ public:
 		rehash(std::ceil(static_cast<float>(count) / max_load_factor()));
 	}
 
-	UnorderedMap() : UnorderedMap(kBaseBuckets) {}
+	UnorderedMap() : UnorderedMap(base_buckets) {}
 	explicit UnorderedMap(size_t bucket_count) : UnorderedMap(bucket_count, Alloc()) {}
 	UnorderedMap(size_t bucket_count, const Alloc& alloc) : UnorderedMap(bucket_count, Hash(), alloc) {}
 	UnorderedMap(size_t bucket_count, const Hash& hash, const Alloc& alloc) : allocator(alloc), hasher(hash), equer(), table(bucket_count, allocator), bucket(allocator) {}
-	explicit UnorderedMap(const Alloc& alloc) : UnorderedMap(kBaseBuckets, alloc) {};
+	explicit UnorderedMap(const Alloc& alloc) : UnorderedMap(base_buckets, alloc) {};
 
 	UnorderedMap(UnorderedMap&& that) noexcept = default;
 	UnorderedMap(const UnorderedMap& that) : allocator(AllocTraits::select_on_container_copy_construction(that.allocator)),
-		hasher(that.hasher), equer(that.equer), table(kBaseBuckets, allocator), bucket(allocator) {
+		hasher(that.hasher), equer(that.equer), table(base_buckets, allocator), bucket(allocator) {
 		for (const auto& i : that) {
 			insert(i);
 		}
