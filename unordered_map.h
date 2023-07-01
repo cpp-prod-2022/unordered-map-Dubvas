@@ -439,6 +439,11 @@ private:
         return tmp;
     }
 
+    void correctDestroy(NodeType* element) {
+        AllocTraits::destroy(allocator, element);
+        AllocTraits::deallocate(allocator, element, 1);
+    }
+
 public:
     using iterator = BaseIterator<NodeType>;
     using const_iterator = BaseIterator<const NodeType>;
@@ -559,12 +564,10 @@ public:
             result = insert(std::move(*tmp));
         }
         catch (...) {
-            AllocTraits::destroy(allocator, tmp);
-            AllocTraits::deallocate(allocator, tmp, 1);
+            correctDestroy(tmp);
             throw;
         }
-        AllocTraits::destroy(allocator, tmp);
-        AllocTraits::deallocate(allocator, tmp, 1);
+        correctDestroy(tmp);
         return result;
     }
 
@@ -593,12 +596,10 @@ public:
             result = insert(std::pair<const Key, Value>{std::move(const_cast<Key&>(tmp->first)), std::move(tmp->second)});
         }
         catch (...) {
-            AllocTraits::destroy(allocator, tmp);
-            AllocTraits::deallocate(allocator, tmp, 1);
+            correctDestroy(tmp);
             throw;
         }
-        AllocTraits::destroy(allocator, tmp);
-        AllocTraits::deallocate(allocator, tmp, 1);
+        correctDestroy(tmp);
         return result;
     }
 
