@@ -559,9 +559,11 @@ public:
             result = insert(std::move(*tmp));
         }
         catch (...) {
+            AllocTraits::destroy(allocator, tmp);
             AllocTraits::deallocate(allocator, tmp, 1);
             throw;
         }
+        AllocTraits::destroy(allocator, tmp);
         AllocTraits::deallocate(allocator, tmp, 1);
         return result;
     }
@@ -591,9 +593,11 @@ public:
             result = insert(std::pair<const Key, Value>{std::move(const_cast<Key&>(tmp->first)), std::move(tmp->second)});
         }
         catch (...) {
+            AllocTraits::destroy(allocator, tmp);
             AllocTraits::deallocate(allocator, tmp, 1);
             throw;
         }
+        AllocTraits::destroy(allocator, tmp);
         AllocTraits::deallocate(allocator, tmp, 1);
         return result;
     }
@@ -673,4 +677,3 @@ public:
         return const_iterator(LIterator(bucket.cend().ptr));
     }
 };
-
